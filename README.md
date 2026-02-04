@@ -48,6 +48,30 @@ The workflow collects the following information from each runner:
 
 ## Usage
 
+### Manual Script Execution
+
+The repository includes standalone bash scripts that can be executed manually for testing or debugging:
+
+```bash
+# Gather all specifications for your system
+./scripts/gather_specs.sh
+
+# Gather only hardware information
+./scripts/gather_hardware_linux.sh    # For Linux
+./scripts/gather_hardware_macos.sh    # For macOS
+./scripts/gather_hardware_windows.sh  # For Windows
+
+# Gather only software information
+./scripts/gather_software_linux.sh    # For Linux
+./scripts/gather_software_macos.sh    # For macOS
+./scripts/gather_software_windows.sh  # For Windows
+
+# Save specifications to a file
+./scripts/save_specs.sh output.txt system-name amd64 linux
+```
+
+See [scripts/README.md](scripts/README.md) for detailed documentation on manual script usage.
+
 ### Cross-Platform Compatibility
 
 The workflow uses **bash scripts** for all platforms, which works because:
@@ -75,6 +99,25 @@ After the workflow completes:
 4. Download the artifacts to get detailed specification files for each runner
 
 Each runner uploads its specifications as an artifact named `runner-specs-{os}-{arch}` that is retained for 90 days.
+
+## Repository Structure
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── runner-specs.yml    # GitHub Actions workflow (calls scripts)
+├── scripts/                     # Executable bash scripts
+│   ├── README.md               # Detailed script documentation
+│   ├── common.sh               # Shared utility functions
+│   ├── gather_specs.sh         # Main entry point
+│   ├── gather_hardware_*.sh    # Platform-specific hardware gathering
+│   ├── gather_software_*.sh    # Platform-specific software gathering
+│   └── save_specs.sh           # Save specifications to file
+└── README.md                   # This file
+```
+
+The scripts are modular and can be executed independently or as part of the GitHub Actions workflow.
 
 ## Output Format
 
