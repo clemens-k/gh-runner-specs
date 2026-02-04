@@ -16,14 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # see https://docs.github.com/en/actions/reference/runners/github-hosted-runners
           # Linux AMD64 runners
           - os: ubuntu-latest
-            arch: amd64
-            platform: linux
-          - os: ubuntu-22.04
-            arch: amd64
-            platform: linux
-          - os: ubuntu-20.04
             arch: amd64
             platform: linux
 
@@ -36,26 +31,19 @@ jobs:
           - os: windows-latest
             arch: amd64
             platform: windows
-          - os: windows-2022
-            arch: amd64
-            platform: windows
-          - os: windows-2019
-            arch: amd64
+
+          # Windows ARM64 runners
+          - os: win11-arm
+            arch: arm64
             platform: windows
 
           # macOS AMD64 runners
-          - os: macos-13
-            arch: amd64
-            platform: macos
-          - os: macos-12
+          - os: macos-15-intel
             arch: amd64
             platform: macos
 
           # macOS ARM64 runners (Apple Silicon)
           - os: macos-latest
-            arch: arm64
-            platform: macos
-          - os: macos-14
             arch: arm64
             platform: macos
 
