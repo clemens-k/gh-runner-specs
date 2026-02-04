@@ -96,6 +96,9 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'  # Run on schedule OR manual trigger
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -127,3 +130,6 @@ jobs:
           body: |
             Monthly snapshot of GitHub Actions runner specifications.
             Generated on: ${{ steps.set_release_dates.outputs.date_full }}
+          draft: false
+          prerelease: false
+          make_latest: true
