@@ -38,12 +38,14 @@ The workflow tests the following [GitHub Actions runners](https://docs.github.co
 The workflow collects the following information from each runner:
 
 ### Hardware Information
+
 - **CPU Model**: Processor name and specifications
 - **CPU Count**: Number of physical and logical CPUs
 - **RAM**: Total memory available
 - **Disk Space**: Available disk space and storage details
 
 ### Software Information
+
 - **Kernel Version**: Operating system kernel version
 - **OS Release**: Detailed OS version information
 - **Installed Software**: Sample of common development tools (gcc, python, node, java, docker, git, etc.)
@@ -105,7 +107,7 @@ Each runner uploads its specifications as an artifact named `runner-specs-{os}-{
 
 ## Repository Structure
 
-```
+```txt
 .
 ├── .github/
 │   └── workflows/
@@ -131,7 +133,7 @@ The workflow outputs information in two formats:
 
 ## Example Output
 
-```
+```txt
 ============================================
 HARDWARE INFORMATION
 ============================================
