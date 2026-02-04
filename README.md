@@ -7,28 +7,31 @@ This repository contains a GitHub Actions workflow that gathers hardware and sof
 
 ## Supported Runners
 
-The workflow tests the following GitHub Actions runners:
+The workflow tests the following [GitHub Actions runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners):
 
 ### Linux (AMD64)
+
 - `ubuntu-latest`
-- `ubuntu-22.04`
-- `ubuntu-20.04`
 
 ### Linux (ARM64)
+
 - `ubuntu-24.04-arm`
 
 ### Windows (AMD64)
+
 - `windows-latest`
-- `windows-2022`
-- `windows-2019`
+
+### Windows (ARM64)
+
+- `win11-arm`
 
 ### macOS (AMD64 - Intel)
-- `macos-13`
-- `macos-12`
+
+- `macos-15-intel`
 
 ### macOS (ARM64 - Apple Silicon)
+
 - `macos-latest`
-- `macos-14`
 
 ## Collected Information
 
