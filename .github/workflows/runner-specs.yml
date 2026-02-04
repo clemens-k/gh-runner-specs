@@ -269,13 +269,13 @@ jobs:
             df -h >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
           elif [[ "${{ matrix.platform }}" == "windows" ]]; then
             echo "CPU:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
-            wmic cpu get /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            powershell -Command "Get-CimInstance -ClassName Win32_Processor | Format-List" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
             echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
             echo "Memory:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
-            wmic computersystem get totalphysicalmemory /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            powershell -Command "Get-CimInstance -ClassName Win32_ComputerSystem | Format-List" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
             echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
             echo "Disk:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
-            wmic logicaldisk get /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            powershell -Command "Get-CimInstance -ClassName Win32_LogicalDisk | Format-List" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
           fi
 
           # Append software info
