@@ -111,13 +111,19 @@ jobs:
           cd ..
           # Create timestamped zip archive
           zip -r runner-specs-$(date +%Y-%m-%d).zip all-runner-specs/
+
+      - name: Set release dates
+        id: set_release_dates
+        run: |
+          echo "date_tag=$(date +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "date_full=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
       
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: specs-$(date +%Y-%m)
-          name: Runner Specifications - $(date +%Y-%m)
+          tag_name: specs-${{ steps.set_release_dates.outputs.date_tag }}
+          name: Runner Specifications - ${{ steps.set_release_dates.outputs.date_tag }}
           files: runner-specs-*.zip
           body: |
             Monthly snapshot of GitHub Actions runner specifications.
-            Generated on: $(date +%Y-%m-%d)
+            Generated on: ${{ steps.set_release_dates.outputs.date_full }}
