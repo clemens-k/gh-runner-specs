@@ -1,9 +1,10 @@
-# identiy_runners
+# gh-runner-specs
+
 Run github actions to collect data about available runners
 
 ## Overview
 
-This repository contains a GitHub Actions workflow that gathers hardware and software specifications from all available GitHub Actions runners across different platforms and architectures.
+This repository contains a GitHub Actions workflow that gathers hardware and software specifications from GitHub Actions runners across different platforms and architectures. We collect only latest for each of and architecture which is supported.
 
 ## Supported Runners
 
