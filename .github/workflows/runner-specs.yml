@@ -1,0 +1,86 @@
+name: GitHub Actions Runner Specifications
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - copilot/**
+
+permissions:
+  contents: read
+
+jobs:
+  gather-specs:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # see https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+          # Linux AMD64 runners
+          - os: ubuntu-latest
+            arch: amd64
+            platform: linux
+
+          # Linux ARM64 runners
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            platform: linux
+
+          # Windows AMD64 runners
+          - os: windows-latest
+            arch: amd64
+            platform: windows
+
+          
+          # Windows ARM64 runners - is a shit show, need to wait > 30min for an available runner
+          #- os: win11-arm
+          #  arch: arm64
+          #  platform: windows
+
+          # macOS AMD64 runners
+          - os: macos-15-intel
+            arch: amd64
+            platform: macos
+
+          # macOS ARM64 runners (Apple Silicon)
+          - os: macos-latest
+            arch: arm64
+            platform: macos
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} (${{ matrix.arch }})
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Note: All steps use 'shell: bash' for cross-platform compatibility
+      # - Windows runners include Git Bash pre-installed
+      # - macOS runners have native bash support
+      # - Linux runners have native bash support
+      - name: Gather Hardware Information
+        shell: bash
+        run: |
+          echo "Runner OS: ${{ matrix.os }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          echo "Platform: ${{ matrix.platform }}"
+          echo ""
+          ./scripts/gather_specs.sh ${{ matrix.platform }}
+
+      - name: Save Specifications to Artifact
+        shell: bash
+        run: |
+          mkdir -p runner-specs
+          ./scripts/save_specs.sh \
+            runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt \
+            ${{ matrix.os }} \
+            ${{ matrix.arch }} \
+            ${{ matrix.platform }}
+
+      - name: Upload Specifications
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-specs-${{ matrix.os }}-${{ matrix.arch }}
+          path: runner-specs/
+          retention-days: 90
