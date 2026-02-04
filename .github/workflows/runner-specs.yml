@@ -101,7 +101,8 @@ jobs:
             echo "Physical CPUs: $(sysctl -n hw.physicalcpu)"
             echo "Logical CPUs: $(sysctl -n hw.logicalcpu)"
           elif [[ "${{ matrix.platform }}" == "windows" ]]; then
-            wmic cpu get name,numberofcores,numberoflogicalprocessors /format:list | grep -v "^$"
+            # Use PowerShell for Windows (wmic deprecated in Server 2025)
+            powershell -Command "Get-CimInstance -ClassName Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors | Format-List"
           fi
           echo ""
 
@@ -115,7 +116,8 @@ jobs:
             echo "Total RAM: $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) GB"
             vm_stat | head -10
           elif [[ "${{ matrix.platform }}" == "windows" ]]; then
-            wmic computersystem get totalphysicalmemory /format:list | grep -v "^$"
+            # Use PowerShell for Windows (wmic deprecated in Server 2025)
+            powershell -Command "Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object TotalPhysicalMemory | Format-List"
             systeminfo | grep "Total Physical Memory"
           fi
           echo ""
@@ -128,7 +130,8 @@ jobs:
             echo "Disk usage summary:"
             df -h | grep -E "^/dev|Filesystem"
           elif [[ "${{ matrix.platform }}" == "windows" ]]; then
-            wmic logicaldisk get size,freespace,caption /format:list | grep -v "^$"
+            # Use PowerShell for Windows (wmic deprecated in Server 2025)
+            powershell -Command "Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object DeviceID, Size, FreeSpace | Format-List"
           fi
           echo ""
 
@@ -177,7 +180,12 @@ jobs:
             echo "Development tools:"
             for tool in gcc g++ make cmake python3 node java docker git; do
               if which $tool &>/dev/null; then
-                echo "$tool: $(which $tool) - $($tool --version 2>&1 | head -1)"
+                if [[ "$tool" == "java" ]]; then
+                  # Java uses -version not --version
+                  echo "$tool: $(which $tool) - $($tool -version 2>&1 | head -1)"
+                else
+                  echo "$tool: $(which $tool) - $($tool --version 2>&1 | head -1)"
+                fi
               fi
             done
           elif [[ "${{ matrix.platform }}" == "macos" ]]; then
@@ -185,18 +193,33 @@ jobs:
             which brew port 2>/dev/null || echo "None found"
             echo ""
             echo "Development tools:"
-            for tool in gcc clang make cmake python3 node java docker git xcodebuild; do
+            for tool in gcc clang make cmake python3 node java docker git; do
               if which $tool &>/dev/null; then
-                version=$($tool --version 2>&1 | head -1)
+                if [[ "$tool" == "java" ]]; then
+                  # Java uses -version not --version
+                  version=$($tool -version 2>&1 | head -1)
+                else
+                  version=$($tool --version 2>&1 | head -1)
+                fi
                 echo "$tool: $(which $tool) - $version"
               fi
             done
+            # xcodebuild separately as it exits with non-zero on --version
+            if which xcodebuild &>/dev/null; then
+              version=$(xcodebuild -version 2>&1 | head -1 || echo "installed")
+              echo "xcodebuild: $(which xcodebuild) - $version"
+            fi
           elif [[ "${{ matrix.platform }}" == "windows" ]]; then
             echo "Development tools:"
             for tool in python node java docker git; do
               if which $tool &>/dev/null; then
                 echo "$tool: $(which $tool)"
-                $tool --version 2>&1 | head -1
+                if [[ "$tool" == "java" ]]; then
+                  # Java uses -version not --version
+                  $tool -version 2>&1 | head -1
+                else
+                  $tool --version 2>&1 | head -1
+                fi
               fi
             done
             echo ""
