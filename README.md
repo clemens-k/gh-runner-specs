@@ -157,3 +157,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/root        84G   56G   28G  67% /
 ...
 ```
+
+## License
+
+MIT
