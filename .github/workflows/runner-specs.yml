@@ -1,0 +1,283 @@
+name: GitHub Actions Runner Specifications
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - copilot/**
+
+jobs:
+  gather-specs:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux AMD64 runners
+          - os: ubuntu-latest
+            arch: amd64
+            platform: linux
+          - os: ubuntu-22.04
+            arch: amd64
+            platform: linux
+          - os: ubuntu-20.04
+            arch: amd64
+            platform: linux
+
+          # Linux ARM64 runners
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            platform: linux
+
+          # Windows AMD64 runners
+          - os: windows-latest
+            arch: amd64
+            platform: windows
+          - os: windows-2022
+            arch: amd64
+            platform: windows
+          - os: windows-2019
+            arch: amd64
+            platform: windows
+
+          # macOS AMD64 runners
+          - os: macos-13
+            arch: amd64
+            platform: macos
+          - os: macos-12
+            arch: amd64
+            platform: macos
+
+          # macOS ARM64 runners (Apple Silicon)
+          - os: macos-latest
+            arch: arm64
+            platform: macos
+          - os: macos-14
+            arch: arm64
+            platform: macos
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} (${{ matrix.arch }})
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Gather Hardware Information
+        shell: bash
+        run: |
+          echo "============================================"
+          echo "HARDWARE INFORMATION"
+          echo "============================================"
+          echo ""
+
+          echo "Runner OS: ${{ matrix.os }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          echo "Platform: ${{ matrix.platform }}"
+          echo ""
+
+          # CPU Information
+          echo "--- CPU Information ---"
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            echo "CPU Model:"
+            lscpu | grep "Model name" || cat /proc/cpuinfo | grep "model name" | head -1
+            echo ""
+            echo "CPU Details:"
+            lscpu | grep -E "Architecture|CPU\(s\)|Thread|Core|Socket|Vendor|MHz" || true
+            echo ""
+            echo "CPU Count: $(nproc)"
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            echo "CPU Model:"
+            sysctl -n machdep.cpu.brand_string 2>/dev/null || system_profiler SPHardwareDataType | grep "Chip\|Processor"
+            echo ""
+            echo "CPU Count: $(sysctl -n hw.ncpu)"
+            echo "Physical CPUs: $(sysctl -n hw.physicalcpu)"
+            echo "Logical CPUs: $(sysctl -n hw.logicalcpu)"
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            wmic cpu get name,numberofcores,numberoflogicalprocessors /format:list | grep -v "^$"
+          fi
+          echo ""
+
+          # RAM Information
+          echo "--- RAM Information ---"
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            free -h
+            echo ""
+            echo "Total RAM: $(free -h | awk '/^Mem:/ {print $2}')"
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            echo "Total RAM: $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) GB"
+            vm_stat | head -10
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            wmic computersystem get totalphysicalmemory /format:list | grep -v "^$"
+            systeminfo | grep "Total Physical Memory"
+          fi
+          echo ""
+
+          # Disk Information
+          echo "--- Disk Information ---"
+          if [[ "${{ matrix.platform }}" == "linux" ]] || [[ "${{ matrix.platform }}" == "macos" ]]; then
+            df -h / | tail -1
+            echo ""
+            echo "Disk usage summary:"
+            df -h | grep -E "^/dev|Filesystem"
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            wmic logicaldisk get size,freespace,caption /format:list | grep -v "^$"
+          fi
+          echo ""
+
+      - name: Gather Software Information
+        shell: bash
+        run: |
+          echo "============================================"
+          echo "SOFTWARE INFORMATION"
+          echo "============================================"
+          echo ""
+
+          # Kernel Version
+          echo "--- Kernel/OS Version ---"
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            echo "Kernel Version:"
+            uname -r
+            echo ""
+            echo "OS Release:"
+            cat /etc/os-release 2>/dev/null || cat /etc/lsb-release 2>/dev/null || echo "N/A"
+            echo ""
+            echo "Full uname:"
+            uname -a
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            echo "Kernel Version:"
+            uname -r
+            echo ""
+            echo "macOS Version:"
+            sw_vers
+            echo ""
+            echo "Full uname:"
+            uname -a
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            systeminfo | grep -E "OS Name|OS Version|System Type"
+            echo ""
+            echo "Windows Version Details:"
+            cmd //c ver
+          fi
+          echo ""
+
+          # Installed Software (sample)
+          echo "--- Installed Software (Sample) ---"
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            echo "Package managers:"
+            which apt dpkg yum rpm 2>/dev/null || echo "None found"
+            echo ""
+            echo "Development tools:"
+            for tool in gcc g++ make cmake python3 node java docker git; do
+              if which $tool &>/dev/null; then
+                echo "$tool: $(which $tool) - $($tool --version 2>&1 | head -1)"
+              fi
+            done
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            echo "Package managers:"
+            which brew port 2>/dev/null || echo "None found"
+            echo ""
+            echo "Development tools:"
+            for tool in gcc clang make cmake python3 node java docker git xcodebuild; do
+              if which $tool &>/dev/null; then
+                version=$($tool --version 2>&1 | head -1)
+                echo "$tool: $(which $tool) - $version"
+              fi
+            done
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            echo "Development tools:"
+            for tool in python node java docker git; do
+              if which $tool &>/dev/null; then
+                echo "$tool: $(which $tool)"
+                $tool --version 2>&1 | head -1
+              fi
+            done
+            echo ""
+            echo "Chocolatey:"
+            which choco &>/dev/null && choco --version || echo "Not installed"
+          fi
+          echo ""
+
+          # Environment Variables (selected)
+          echo "--- Key Environment Variables ---"
+          echo "HOME/USERPROFILE: $HOME"
+          echo "PATH (first 500 chars): ${PATH:0:500}"
+          echo "RUNNER_OS: $RUNNER_OS"
+          echo "RUNNER_ARCH: $RUNNER_ARCH"
+          echo "RUNNER_NAME: $RUNNER_NAME"
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          echo ""
+
+      - name: Save Specifications to Artifact
+        shell: bash
+        run: |
+          mkdir -p runner-specs
+
+          # Create a detailed specification file
+          cat > runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt << 'EOF'
+          ============================================
+          GITHUB ACTIONS RUNNER SPECIFICATIONS
+          ============================================
+          Runner: ${{ matrix.os }}
+          Architecture: ${{ matrix.arch }}
+          Platform: ${{ matrix.platform }}
+          Collection Date: $(date)
+
+          EOF
+
+          # Append hardware info
+          echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          echo "=== HARDWARE INFORMATION ===" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            echo "CPU:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            lscpu >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt 2>/dev/null || cat /proc/cpuinfo >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Memory:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            free -h >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Disk:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            df -h >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            echo "CPU:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            sysctl -a | grep -E "machdep.cpu|hw.cpu|hw.ncpu|hw.physicalcpu|hw.logicalcpu" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt 2>/dev/null
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Memory:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            sysctl hw.memsize >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            vm_stat >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Disk:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            df -h >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            echo "CPU:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            wmic cpu get /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Memory:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            wmic computersystem get totalphysicalmemory /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            echo "Disk:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+            wmic logicaldisk get /format:list >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          fi
+
+          # Append software info
+          echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          echo "=== SOFTWARE INFORMATION ===" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          echo "" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          echo "Kernel/OS:" >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+          uname -a >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt
+
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            cat /etc/os-release >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt 2>/dev/null || true
+          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
+            sw_vers >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt 2>/dev/null || true
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
+            systeminfo >> runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt 2>/dev/null || true
+          fi
+
+      - name: Upload Specifications
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-specs-${{ matrix.os }}-${{ matrix.arch }}
+          path: runner-specs/
+          retention-days: 90
