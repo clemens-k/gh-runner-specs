@@ -5,10 +5,15 @@ on:
   push:
     branches:
       - main
-      - copilot/**
+  schedule:
+    - cron: '0 0 1 * *'  # Runs at 00:00 UTC on the 1st day of every month
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   gather-specs:
@@ -84,3 +89,32 @@ jobs:
           name: runner-specs-${{ matrix.os }}-${{ matrix.arch }}
           path: runner-specs/
           retention-days: 90
+
+  create-combined-package:
+    needs: gather-specs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'  # Run on schedule OR manual trigger
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-runner-specs
+      
+      - name: Create combined package
+        run: |
+          cd all-runner-specs
+          # Flatten structure - move all .txt files to root
+          find . -name "*.txt" -exec mv {} . \;
+          # Remove empty directories
+          find . -type d -empty -delete
+          cd ..
+          # Create zip archive
+          zip -r runner-specs-combined.zip all-runner-specs/
+      
+      - name: Upload combined package
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-specs-combined
+          path: runner-specs-combined.zip
+          retention-days: 365  # Keep monthly snapshots longer
