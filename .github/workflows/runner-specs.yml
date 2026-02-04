@@ -214,7 +214,7 @@ jobs:
           mkdir -p runner-specs
 
           # Create a detailed specification file
-          cat > runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt << 'EOF'
+          cat > runner-specs/${{ matrix.os }}-${{ matrix.arch }}.txt << EOF
           ============================================
           GITHUB ACTIONS RUNNER SPECIFICATIONS
           ============================================
