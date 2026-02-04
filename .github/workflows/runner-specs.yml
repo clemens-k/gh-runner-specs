@@ -32,10 +32,11 @@ jobs:
             arch: amd64
             platform: windows
 
-          # Windows ARM64 runners
-          - os: win11-arm
-            arch: arm64
-            platform: windows
+          
+          # Windows ARM64 runners - is a shit show, need to wait > 30min for an available runner
+          #- os: win11-arm
+          #  arch: arm64
+          #  platform: windows
 
           # macOS AMD64 runners
           - os: macos-15-intel

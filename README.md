@@ -23,7 +23,7 @@ The workflow tests the following [GitHub Actions runners](https://docs.github.co
 
 ### Windows (ARM64)
 
-- `win11-arm`
+- `win11-arm` is disabled, because action had to wait for over 30min for an available runner
 
 ### macOS (AMD64 - Intel)
 
