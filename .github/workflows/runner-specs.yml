@@ -9,7 +9,7 @@ on:
     - cron: '0 0 1 * *'  # Runs at 00:00 UTC on the 1st day of every month
 
 permissions:
-  contents: write  # Required for creating releases
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -90,7 +90,7 @@ jobs:
           path: runner-specs/
           retention-days: 90
 
-  create-monthly-release:
+  create-combined-package:
     needs: gather-specs
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'  # Run on schedule OR manual trigger
@@ -101,7 +101,7 @@ jobs:
         with:
           path: all-runner-specs
       
-      - name: Create release archive
+      - name: Create combined package
         run: |
           cd all-runner-specs
           # Flatten structure - move all .txt files to root
@@ -109,21 +109,12 @@ jobs:
           # Remove empty directories
           find . -type d -empty -delete
           cd ..
-          # Create timestamped zip archive
-          zip -r runner-specs-$(date +%Y-%m-%d).zip all-runner-specs/
-
-      - name: Set release dates
-        id: set_release_dates
-        run: |
-          echo "date_tag=$(date +%Y-%m)" >> "$GITHUB_OUTPUT"
-          echo "date_full=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          # Create zip archive
+          zip -r runner-specs-combined.zip all-runner-specs/
       
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload combined package
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: specs-${{ steps.set_release_dates.outputs.date_tag }}
-          name: Runner Specifications - ${{ steps.set_release_dates.outputs.date_tag }}
-          files: runner-specs-*.zip
-          body: |
-            Monthly snapshot of GitHub Actions runner specifications.
-            Generated on: ${{ steps.set_release_dates.outputs.date_full }}
+          name: runner-specs-combined
+          path: runner-specs-combined.zip
+          retention-days: 365  # Keep monthly snapshots longer
