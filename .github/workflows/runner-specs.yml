@@ -66,6 +66,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Note: All steps use 'shell: bash' for cross-platform compatibility
+      # - Windows runners include Git Bash pre-installed
+      # - macOS runners have native bash support
+      # - Linux runners have native bash support
       - name: Gather Hardware Information
         shell: bash
         run: |

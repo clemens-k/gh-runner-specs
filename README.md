@@ -48,6 +48,16 @@ The workflow collects the following information from each runner:
 
 ## Usage
 
+### Cross-Platform Compatibility
+
+The workflow uses **bash scripts** for all platforms, which works because:
+
+- **Linux runners**: Native bash support
+- **macOS runners**: Native bash support (Unix-based)
+- **Windows runners**: Git Bash is pre-installed on all GitHub-hosted Windows runners
+
+All workflow steps explicitly use `shell: bash` to ensure consistent behavior across all platforms. The scripts automatically adapt their commands based on the detected platform (Linux, Windows, or macOS).
+
 ### Running the Workflow
 
 The workflow can be triggered in two ways:
